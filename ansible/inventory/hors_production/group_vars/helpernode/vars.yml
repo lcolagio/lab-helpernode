@@ -1,0 +1,108 @@
+# proxy: haproxy
+haproxy_conf: /etc/haproxy/haproxy.cfg
+http_port: 8080
+
+bootstrap_node:
+- name: bootstrap
+  ip: 192.168.0.187
+  # mac: 52:54:00:96:59:56
+
+master_ports:
+- port: 6443
+  description: apiserver
+- port: 22623
+  description: configserver
+
+master_nodes:
+- name: master-1
+  ip: 192.168.0.79
+  # mac: B8:59:9F:C0:36:46
+  # bond: bond0
+  # primary: ens2f0
+  # backup: ens2f1
+  # options: mode=active-backup
+- name: master-2
+  ip: 192.168.0.26
+  # mac: B8:59:9F:C0:35:66
+  # bond: bond0
+  # # primary: ens2f0
+  # # backup: ens2f1
+  # # options: mode=active-backup
+- name: master-3
+  ip: 192.168.0.212
+  # mac: B8:59:9F:C0:34:C6
+  # bond: bond0
+  # primary: ens2f0
+  # backup: ens2f1
+  # options: mode=active-backup
+
+num_of_master_nodes: 3
+
+worker_ports:
+- port: 80
+  description: http
+- port: 443
+  description: https
+
+compute_nodes:
+- name: worker-1
+  ip: 192.168.46.24
+  # mac: B8:59:9F:C0:36:3E
+  # bond: bond0
+  # primary: ens2f0
+  # backup: ens2f1
+  # options: mode=active-backup
+  # interfaces:
+  # - ens2f0
+  # os: rhcos
+- name: worker-2
+  ip: 192.168.46.25
+  # mac: B8:59:9F:C0:35:E6
+  # bond: bond0
+  # primary: ens2f0
+  # backup: ens2f1
+  # options: mode=active-backup
+  # interfaces:
+  # - ens2f0
+  # os: rhcos
+- name: worker-3
+  ip: 192.168.46.27
+  # mac: B8:59:9F:C0:35:26
+  # bond: bond0
+  # primary: p2p1
+  # backup: p2p2
+  # options: mode=active-backup
+  # interfaces:
+  # - em1
+  # - em2
+  # - p2p1
+  # - p2p2
+  # os: rhel
+
+num_of_compute_nodes: 3
+
+# default_lease_time: 8000
+# max_lease_time: 72000
+software_src: "{{ playbook_dir }}/src"
+openshift_cli: "oc-4.9.23-linux.tar.gz"
+# openshift_installer: openshift-install-linux.tar.gz
+# initramfs: rhcos-live-initramfs.x86_64.img
+# kernel_file: rhcos-live-kernel-x86_64
+# uefi_file: rhcos-metal.x86_64.raw.gz
+# rootfs: rhcos-live-rootfs.x86_64.img
+# rhel_os: rhel-server-7.9-x86_64-dvd.iso
+rhcos_iso: rhcos-4.9.0-x86_64-live.x86_64.iso
+pull_secret_file: pull-secret.txt
+cluster_install: 6+ node
+master_install_device: sda
+worker_install_device: sda    
+default_zone_file: /var/named/ocp.zones
+cluster: ocp
+os: rhcos
+http_ignition: ignition
+version: 4.9
+install_user: core
+install_dir: openshift
+cluster_network_cidr: 10.128.0.0/14
+host_prefix: 23
+service_network_cidr: 172.30.0.0/16

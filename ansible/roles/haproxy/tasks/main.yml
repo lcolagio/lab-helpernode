@@ -1,0 +1,45 @@
+---
+- name: install HAproxy
+  yum:
+    name: "haproxy"
+    state: latest
+
+- name: allow OCP ports to listen via http
+  seport:
+    ports: "{{ item }}"
+    proto: tcp
+    setype: http_port_t
+    state: present
+  with_items:
+    - 6443
+    - 443
+    - 22623
+    - 80
+
+- name: allow OCP ports through firewalld
+  firewalld:
+    port: "{{ item }}/tcp"
+    permanent: yes
+    state: enabled
+    immediate: yes
+  with_items:
+    - 6443
+    - 443
+    - 22623
+    - 80
+
+- name: enable HAproxy service
+  systemd: 
+    name: "haproxy"
+    enabled: yes
+    state: started
+
+- name: generate haproxy config file
+  template:
+    src: haproxy.conf.j2
+    dest: "{{ haproxy_conf }}"
+
+- name: restart HAPROXY
+  systemd:
+    name: haproxy
+    state: restarted

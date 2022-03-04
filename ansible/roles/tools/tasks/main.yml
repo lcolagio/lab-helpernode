@@ -1,0 +1,25 @@
+---
+# tasks file for jq and oc
+- name: install jq
+  yum: 
+    name: jq
+    state: latest
+
+- name: install unzip
+  yum: 
+    name: unzip
+    state: latest
+# 
+- name: "stat oc client"
+  stat:
+    path: /usr/local/bin/oc
+  register: r_oc_client_bin
+
+- name: Unarchive a file that is already on the remote machine
+  unarchive:
+    src:  "{{ software_src }}/{{ openshift_cli }}"
+    dest: /usr/local/bin
+    owner: "{{ install_user }}"
+    group: "{{ install_user }}"
+  when: not r_oc_client_bin.stat.exists
+

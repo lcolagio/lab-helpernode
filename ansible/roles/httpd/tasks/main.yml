@@ -1,0 +1,66 @@
+---
+# tasks file for http
+- name: install firewalld
+  yum: 
+    name: firewalld 
+    state: latest
+
+- name: restart firewalld service
+  systemd: name=firewalld state=restarted
+
+- name: install http
+  yum: 
+    name: httpd 
+    state: latest
+
+- name: allow http to listen on port {{ http_port }}
+  seport:
+    ports: "{{ http_port }}"
+    proto: tcp
+    setype: http_port_t
+    state: present
+
+- name: allow {{ http_port }} through firewall
+  firewalld:
+    port: "{{ http_port }}/tcp"
+    permanent: yes
+    immediate: yes
+    state: enabled
+
+- name: generate httpd config
+  template:
+    src: httpd.conf.j2
+    dest: /etc/httpd/conf/httpd.conf
+
+- name: restart http service
+  systemd: name=httpd state=restarted
+
+- name: enable and start service
+  systemd:
+    name: httpd
+    enabled: yes
+    state: started
+
+- name: create directory for rhcos software
+  file: 
+    path: /var/www/html/{{ os }}/{{ version }}
+    state: directory
+  register: http_os_dir
+
+- name: create directories for rhel os and kickstart
+  file:
+    path: /var/www/html/{{ item }}
+    state: directory
+  loop:
+    - kickstart
+    - rhel
+    - "{{ http_ignition }}"
+    - scripts
+
+- name: copy custom scripts to httpd
+  copy:
+    src: "{{ software_src }}/scripts"
+    dest: /var/www/html/
+    directory_mode: yes
+    owner: "{{ install_user }}"
+    group: "{{ install_user }}"

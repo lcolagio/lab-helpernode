@@ -1,0 +1,9 @@
+- name: Deploy OCP cluster
+  hosts: helpernode
+  become: true
+  remote_user: ec2-user
+  roles:
+  - tools
+  - httpd
+  - haproxy
+  - openshift-installer

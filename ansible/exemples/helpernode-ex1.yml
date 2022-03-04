@@ -1,0 +1,118 @@
+- name: Remove repository EPEL
+  rhsm_repository:
+    name: "La_Poste_EPEL_EPEL_7"
+    state: disabled
+
+- name: Enable needed repositories
+  rhsm_repository:
+    name:
+    - rhel-7-server-rpms
+    - rhel-7-server-extras-rpms
+    - rhel-7-server-ansible-2.9-rpms
+
+- name: yum update all
+  yum:
+    name: "*"
+    state: latest
+
+- name: Install needed packages
+  yum:
+    name:
+    - httpd
+    - dnsmasq
+    - iptables-services
+    - python-netaddr
+    - unzip
+    - python2-openshift
+    - bash-completion
+    - python36
+    - s3cmd
+    - bash-completion-extras
+    - jq
+    disablerepo: "*"
+    enablerepo: "rhel-7-server-rpms,La_Poste_EPEL_EPEL_7,rhel-7-server-extras-rpms,rhel-7-server-ansible-2.9-rpms"
+
+- name: Add Listen 9000 on httpd
+  lineinfile:
+    path: /etc/httpd/conf/httpd.conf
+    regexp: '^Listen 9000'
+    insertafter: '^Listen 80'
+    line: 'Listen 9000'
+
+- name: make bin/ directory
+  file:
+    path: /root/bin
+    state: directory
+    mode: '0755'
+
+- name: download needed clients
+  get_url:
+    url: "https://repositories.net-courrier.extra.laposte.fr/repository/raw-paas/tools/{{ item }}"
+    dest: /root/bin/
+    mode: 0755
+  with_items:
+    - argocd
+    - kubectx
+    - kubeseal
+    - oc
+    - kustomize
+    - helm
+    - butane
+    - coreos-installer
+
+- name: customize KUBECONFIG ~/.bash_profile
+  lineinfile:
+    path: /root/.bash_profile
+    regexp: KUBECONFIG=
+    line: export KUBECONFIG={{ cluster_install_dir }}/auth/kubeconfig
+
+- name: customize PROXY ~/.bash_profile
+  blockinfile:
+    path: /root/.bash_profile
+    block: |
+      PROXY='http://{{ vault_openshift_http_proxy }}!@surf-sccc.pasi.log.intra.laposte.fr:8080'
+      export http_proxy=$PROXY
+      export https_proxy=$http_proxy
+      export ftp_proxy=$http_proxy
+      export no_proxy=localhost,127.0.0.0,127.0.0.1,127.0.0.2,localaddress,.localdomain.com,.laposte.fr
+
+- name: customize ~/.ssh/config
+  blockinfile:
+    path: /root/.ssh/config
+    create: yes
+    block: |
+      host w?y*
+        user core
+
+- name: setup completion client tools
+  shell: "{{ item }} completion bash > /etc/bash_completion.d/{{ item }}"
+  with_items:
+    - argocd
+    - oc
+    - kustomize
+    - helm
+    
+- name: "Create {{ cluster_install_base_dir }} directory"
+  file:
+    path: "{{ cluster_install_base_dir }}"
+    state: directory
+
+- name: Extract openshift-install-linux.tar.gz
+  unarchive:
+    src:  "https://repositories.net-courrier.extra.laposte.fr/repository/raw-paas/{{ ocp4_cluster_version_init | default('oc-4.6') }}/openshift-install-linux.tar.gz"
+    dest: "{{ cluster_install_base_dir }}"
+    remote_src: yes
+
+- name: "Create {{ cluster_install_cli_dir }} directory"
+  file:
+    path: "{{ cluster_install_cli_dir }}"
+    state: directory
+
+- name: Start and enable needed services
+  service:
+    name: "{{ item }}"
+    enabled: yes
+    state: started
+  with_items:
+  - httpd
+
