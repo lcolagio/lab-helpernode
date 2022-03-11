@@ -1,6 +1,6 @@
 - name: Remove repository EPEL
   rhsm_repository:
-    name: "La_Poste_EPEL_EPEL_7"
+    name: "customer_EPEL_EPEL_7"
     state: disabled
 
 - name: Enable needed repositories
@@ -30,7 +30,7 @@
     - bash-completion-extras
     - jq
     disablerepo: "*"
-    enablerepo: "rhel-7-server-rpms,La_Poste_EPEL_EPEL_7,rhel-7-server-extras-rpms,rhel-7-server-ansible-2.9-rpms"
+    enablerepo: "rhel-7-server-rpms,customer_EPEL_EPEL_7,rhel-7-server-extras-rpms,rhel-7-server-ansible-2.9-rpms"
 
 - name: Add Listen 9000 on httpd
   lineinfile:
@@ -47,7 +47,7 @@
 
 - name: download needed clients
   get_url:
-    url: "https://repositories.net-courrier.extra.laposte.fr/repository/raw-paas/tools/{{ item }}"
+    url: "https://repositories.extra.customer.fr/repository/raw-paas/tools/{{ item }}"
     dest: /root/bin/
     mode: 0755
   with_items:
@@ -70,11 +70,11 @@
   blockinfile:
     path: /root/.bash_profile
     block: |
-      PROXY='http://{{ vault_openshift_http_proxy }}!@surf-sccc.pasi.log.intra.laposte.fr:8080'
+      PROXY='http://{{ vault_openshift_http_proxy }}!@customer.fr:8080'
       export http_proxy=$PROXY
       export https_proxy=$http_proxy
       export ftp_proxy=$http_proxy
-      export no_proxy=localhost,127.0.0.0,127.0.0.1,127.0.0.2,localaddress,.localdomain.com,.laposte.fr
+      export no_proxy=localhost,127.0.0.0,127.0.0.1,127.0.0.2,localaddress,.localdomain.com,.customer.fr
 
 - name: customize ~/.ssh/config
   blockinfile:
@@ -99,7 +99,7 @@
 
 - name: Extract openshift-install-linux.tar.gz
   unarchive:
-    src:  "https://repositories.net-courrier.extra.laposte.fr/repository/raw-paas/{{ ocp4_cluster_version_init | default('oc-4.6') }}/openshift-install-linux.tar.gz"
+    src:  "https://repositories.customer.fr/repository//{{ ocp4_cluster_version_init | default('oc-4.6') }}/openshift-install-linux.tar.gz"
     dest: "{{ cluster_install_base_dir }}"
     remote_src: yes
 
